@@ -1,12 +1,65 @@
 #!/usr/bin/perl
 
 use CGI qw(:standard);
+use LWP::UserAgent; # install Mozilla::CA module to enable SSL calls
+use JSON;
+use Data::Dumper;
 use strict;
 use warnings;
 
 
-print header(-charset => "utf-8");
-print <<HTML;
+# Check callback status
+#
+my $code = param('code');
+my $error_message;
+
+if ($code) {
+# Authorization Successful
+  my $ua = LWP::UserAgent->new;
+  $ua->timeout(10);
+  $ua->env_proxy;
+
+  my $response = $ua->get("https://graph.facebook.com/oauth/access_token?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl&client_secret=8607b56d7bff32aa0a28118b3411bdf3&code=$code");
+
+  if ($response->is_success) {
+    my %results      = &decode_www_form($response->decoded_content);
+    my $access_token = $results{'access_token'};
+    print redirect(-url => "http://project.infm743.dev:8080/dashboard.pl?access_token=$access_token");
+  }
+  else {
+    my %hash = %{ decode_json($response->decoded_content) };
+    $error_message = $hash{'error'}{'message'};
+  }
+}
+else {
+# Authorization Failed
+  $error_message = param('error_description');
+}
+
+
+if ($error_message) {
+  &print_error_html($error_message);
+}
+
+
+# decode string:
+#   access_token={access-token}&expires={seconds-til-expiration}
+#
+sub decode_www_form {
+  my %hash = ();
+  my @pairs = split('&', $_[0]);
+  foreach (@pairs) {
+    my @array = split('=', $_);
+    $hash{$array[0]} = $array[1];
+  }
+  return %hash;
+}
+
+
+sub print_error_html {
+  my $error_message = $_[0];
+  print header(-charset => "utf-8");
+  print <<HTML;
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -46,8 +99,8 @@ print <<HTML;
 <!-- Main jumbotron for a primary marketing message or call to action -->
 <div class="jumbotron">
   <div class="container">
-    <h1>Hello, Horoscope!</h1>
-    <p>This web application will help you organize your Facebook friends based on their horoscope. You can also discover some interesting information about them.</p>
+    <h1>Error: $error_message</h1>
+    <p>Please try again.</p>
     <p><a class="btn btn-primary btn-lg" href="https://www.facebook.com/dialog/oauth?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl">Login with Facebook &raquo;</a></p>
   </div>
 </div>
@@ -70,3 +123,4 @@ print <<HTML;
 </body>
 </html>
 HTML
+}

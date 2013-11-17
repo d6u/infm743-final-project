@@ -1,8 +1,14 @@
 #!/usr/bin/perl
 
 use CGI qw(:standard);
+use LWP::UserAgent; # install Mozilla::CA module to enable SSL calls
+use JSON;
+use Data::Dumper;
 use strict;
 use warnings;
+
+
+my $access_token = param('access_token');
 
 
 print header(-charset => "utf-8");
@@ -43,16 +49,14 @@ print <<HTML;
   </div>
 </div>
 
-<!-- Main jumbotron for a primary marketing message or call to action -->
-<div class="jumbotron">
-  <div class="container">
-    <h1>Hello, Horoscope!</h1>
-    <p>This web application will help you organize your Facebook friends based on their horoscope. You can also discover some interesting information about them.</p>
-    <p><a class="btn btn-primary btn-lg" href="https://www.facebook.com/dialog/oauth?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl">Login with Facebook &raquo;</a></p>
-  </div>
-</div>
-
 <div class="container">
+  <h1>Title</h1>
+
+  <div class="row">
+    <div class="col-sm-12">
+      <svg class="chart"></svg>
+    </div>
+  </div>
 
   <hr>
 
@@ -60,6 +64,13 @@ print <<HTML;
     <p>&copy; INFM743 Final Project 2013</p>
   </footer>
 </div> <!-- /container -->
+
+<script src="js/jquery-1.10.2.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
+<script src="js/d3.v3.min.js"></script>
+<script src="js/lodash-2.3.0.compat.min.js"></script>
+<script>var \$access_token = '$access_token';</script>
+<script src="js/main.js"></script>
 
 <script>
   var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];

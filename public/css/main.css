@@ -1,11 +1,21 @@
+.bar {
+  fill: steelblue;
+}
 
+.axis text {
+  font: 14px sans-serif;
+}
 
-/* ==========================================================================
-   Author's custom styles
-   ========================================================================== */
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
 
-
-
+.x.axis path {
+  display: none;
+}
 
 
 
