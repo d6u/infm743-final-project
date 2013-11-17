@@ -22,8 +22,9 @@ if ($code) {
   my $response = $ua->get("https://graph.facebook.com/oauth/access_token?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl&client_secret=8607b56d7bff32aa0a28118b3411bdf3&code=$code");
 
   if ($response->is_success) {
-    my %results = &decode_www_form($response->decoded_content);
-
+    my %results      = &decode_www_form($response->decoded_content);
+    my $access_token = $results{'access_token'};
+    print redirect(-url => "http://project.infm743.dev:8080/dashboard.pl?access_token=$access_token");
   }
   else {
     my %hash = %{ decode_json($response->decoded_content) };
@@ -112,10 +113,6 @@ sub print_error_html {
     <p>&copy; INFM743 Final Project 2013</p>
   </footer>
 </div> <!-- /container -->
-
-<script src="js/jquery-1.10.2.min.js"></script>
-<script src="js/bootstrap.min.js"></script>
-<script src="js/main.js"></script>
 
 <script>
   var _gaq=[['_setAccount','UA-XXXXX-X'],['_trackPageview']];
