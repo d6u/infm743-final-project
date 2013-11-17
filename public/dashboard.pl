@@ -53,7 +53,9 @@ print <<HTML;
   <h1>Title</h1>
 
   <div class="row">
-    <div class="col-sm-12 chart"></div>
+    <div class="col-sm-12">
+      <svg class="chart"></svg>
+    </div>
   </div>
 
   <hr>
@@ -66,6 +68,7 @@ print <<HTML;
 <script src="js/jquery-1.10.2.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 <script src="js/d3.v3.min.js"></script>
+<script src="js/lodash-2.3.0.compat.min.js"></script>
 <script>var \$access_token = '$access_token';</script>
 <script src="js/main.js"></script>
 
