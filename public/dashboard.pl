@@ -52,6 +52,10 @@ print <<HTML;
 <div class="container">
   <h1>Title</h1>
 
+  <div class="row">
+    <div class="col-sm-12 chart"></div>
+  </div>
+
   <hr>
 
   <footer>
@@ -61,6 +65,7 @@ print <<HTML;
 
 <script src="js/jquery-1.10.2.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/d3.v3.min.js"></script>
 <script>var \$access_token = '$access_token';</script>
 <script src="js/main.js"></script>
 
