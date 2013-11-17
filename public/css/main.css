@@ -1,5 +1,11 @@
 .bar {
-  fill: steelblue;
+  fill: #656D78;
+}
+.bar.male {
+  fill: #4A89DC;
+}
+.bar.female {
+  fill: #D770AD;
 }
 
 .axis text {
