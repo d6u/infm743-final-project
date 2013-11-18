@@ -56,13 +56,13 @@ print <<HTML;
     <div class="col-sm-12">
       <form class="form-horizontal" role="form">
         <label class="checkbox-inline">
-          <input type="radio" value="both" ng-model="gender"> Both
+          <input type="radio" value="both" ng-model="options.gender"> Both
         </label>
         <label class="checkbox-inline">
-          <input type="radio" value="male" ng-model="gender"> Boys
+          <input type="radio" value="male" ng-model="options.gender"> Boys
         </label>
         <label class="checkbox-inline">
-          <input type="radio" value="female" ng-model="gender"> Girls
+          <input type="radio" value="female" ng-model="options.gender"> Girls
         </label>
       </form>
       <svg horoscope-count-bar-chart class="chart"></svg>

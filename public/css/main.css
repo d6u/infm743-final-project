@@ -1,5 +1,6 @@
 .bar {
   fill: #656D78;
+  transition: all 250ms;
 }
 .bar.male {
   fill: #4A89DC;
