@@ -23,8 +23,14 @@ if ($response->is_success) {
   my %data = %{ decode_json($response->decoded_content) };
   foreach (@{ $data{'friends'}{'data'} }) {
     my $birthday = $_->{'birthday'};
-    $birthday =~ s/\//\-/;
-    $_->{'zodiac_name'} = Date::Horoscope::locate($birthday);
+    if ($birthday) {
+      $birthday =~ /^(\d\d)\/(\d\d)(?:\/\d\d\d\d)?/i;
+      my $month = $1;
+      my $day   = $2;
+      $_->{'zodiac_name'} = Date::Horoscope::locate("$month-$day");
+    } else {
+      $_->{'zodiac_name'} = 'none';
+    }
   }
   print encode_json(\%data);
 }

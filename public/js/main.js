@@ -48,37 +48,39 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
       var horoscopesMale   = [];
       var horoscopesFemale = [];
 
-      d3.json('/get_friends_data.json', function(error, json) {
-      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
-      //   console.save(json);
-        var friendsData      = json['friends']['data'];
+      // d3.json('/get_friends_data.json', function(error, json) {
+      d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+        var friendsData = json['friends']['data'];
 
         for (var i = friendsData.length - 1; i >= 0; i--) {
           var friend = friendsData[i];
           var name   = friend['zodiac_name'];
           var gender = friend['gender'];
-          var theHoroscope       = _.find(horoscopes      , {name: name});
-          var theMaleHoroscope   = _.find(horoscopesMale  , {name: name});
-          var theFemaleHoroscope = _.find(horoscopesFemale, {name: name});
 
-          if (theHoroscope) {
-            theHoroscope['count']++;
-          } else {
-            horoscopes.push({name: name, count: 1});
-          }
+          if (name != 'none') {
+            var theHoroscope       = _.find(horoscopes      , {name: name});
+            var theMaleHoroscope   = _.find(horoscopesMale  , {name: name});
+            var theFemaleHoroscope = _.find(horoscopesFemale, {name: name});
 
-          if (gender == 'male') {
-            if (theMaleHoroscope) {
-              theMaleHoroscope['count']++;
+            if (theHoroscope) {
+              theHoroscope['count']++;
             } else {
-              horoscopesMale.push({name: name, count: 1});
+              horoscopes.push({name: name, count: 1});
             }
-          }
-          else if (gender == 'female') {
-            if (theFemaleHoroscope) {
-              theFemaleHoroscope['count']++;
-            } else {
-              horoscopesFemale.push({name: name, count: 1});
+
+            if (gender == 'male') {
+              if (theMaleHoroscope) {
+                theMaleHoroscope['count']++;
+              } else {
+                horoscopesMale.push({name: name, count: 1});
+              }
+            }
+            else if (gender == 'female') {
+              if (theFemaleHoroscope) {
+                theFemaleHoroscope['count']++;
+              } else {
+                horoscopesFemale.push({name: name, count: 1});
+              }
             }
           }
         };
