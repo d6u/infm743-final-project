@@ -8,6 +8,19 @@ use strict;
 use warnings;
 
 
+my $hostname = url(-base => 1);
+my $client_id;
+my $client_secret;
+if ($hostname eq "http://infm743-final-project.daiwei.lu") {
+  $client_id = "419408698184741";
+  $client_secret = "d1ee4108afeef0952efcb6828d0da592";
+} else {
+  $client_id = "542093092547558";
+  $client_secret = "8607b56d7bff32aa0a28118b3411bdf3";
+}
+my $callback_url = "$hostname"."/callback.pl";
+
+
 # Check callback status
 #
 my $code = param('code');
@@ -19,12 +32,12 @@ if ($code) {
   $ua->timeout(10);
   $ua->env_proxy;
 
-  my $response = $ua->get("https://graph.facebook.com/oauth/access_token?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl&client_secret=8607b56d7bff32aa0a28118b3411bdf3&code=$code");
+  my $response = $ua->get("https://graph.facebook.com/oauth/access_token?client_id=$client_id&redirect_uri=$callback_url&client_secret=$client_secret&code=$code");
 
   if ($response->is_success) {
     my %results      = &decode_www_form($response->decoded_content);
     my $access_token = $results{'access_token'};
-    print redirect(-url => "http://project.infm743.dev:8080/dashboard.pl?access_token=$access_token");
+    print redirect(-url => $hostname."/dashboard.pl?access_token=$access_token");
   }
   else {
     my %hash = %{ decode_json($response->decoded_content) };
@@ -68,7 +81,7 @@ sub print_error_html {
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <title></title>
+  <title>$hostname</title>
   <meta name="description" content="">
   <meta name="viewport" content="width=device-width">
 
@@ -91,7 +104,7 @@ sub print_error_html {
 <div class="navbar navbar-inverse navbar-fixed-top">
   <div class="container">
     <div class="navbar-header">
-      <a class="navbar-brand" href="#">INFM743 Development of Horoscope Application</a>
+      <a class="navbar-brand" href="/">INFM743 Development of Horoscope Application</a>
     </div>
   </div>
 </div>
@@ -101,7 +114,7 @@ sub print_error_html {
   <div class="container">
     <h1>Error: $error_message</h1>
     <p>Please try again.</p>
-    <p><a class="btn btn-primary btn-lg" href="https://www.facebook.com/dialog/oauth?client_id=542093092547558&redirect_uri=http://project.infm743.dev:8080/callback.pl">Login with Facebook &raquo;</a></p>
+    <p><a class="btn btn-primary btn-lg" href="https://www.facebook.com/dialog/oauth?client_id=$client_id&redirect_uri=$callback_url">Login with Facebook &raquo;</a></p>
   </div>
 </div>
 

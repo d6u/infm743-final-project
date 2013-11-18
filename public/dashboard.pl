@@ -37,7 +37,7 @@ print <<HTML;
 
   <script src="js/modernizr-2.6.2-respond-1.1.0.min.js"></script>
 </head>
-<body>
+<body ng-app="horoscope-app">
 <!--[if lt IE 7]>
   <p class="chromeframe">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> or <a href="http://www.google.com/chromeframe/?redirect=true">activate Google Chrome Frame</a> to improve your experience.</p>
 <![endif]-->
@@ -50,11 +50,22 @@ print <<HTML;
 </div>
 
 <div class="container">
-  <h1>Title</h1>
+  <h1>Horoscope Statistics</h1>
 
   <div class="row">
     <div class="col-sm-12">
-      <svg class="chart"></svg>
+      <form class="form-horizontal" role="form">
+        <label class="checkbox-inline">
+          <input type="radio" value="both" ng-model="options.gender"> Both
+        </label>
+        <label class="checkbox-inline">
+          <input type="radio" value="male" ng-model="options.gender"> Boys
+        </label>
+        <label class="checkbox-inline">
+          <input type="radio" value="female" ng-model="options.gender"> Girls
+        </label>
+      </form>
+      <svg horoscope-count-bar-chart class="chart"></svg>
     </div>
   </div>
 
@@ -69,6 +80,10 @@ print <<HTML;
 <script src="js/bootstrap.min.js"></script>
 <script src="js/d3.v3.min.js"></script>
 <script src="js/lodash-2.3.0.compat.min.js"></script>
+<script src="js/console-save.js"></script>
+<script src="js/angular.min.js"></script>
+<script src="js/angular-animate.min.js"></script>
+<script src="js/angular-sanitize.min.js"></script>
 <script>var \$access_token = '$access_token';</script>
 <script src="js/main.js"></script>
 
