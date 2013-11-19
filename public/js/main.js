@@ -122,18 +122,7 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
         var bars = chart.selectAll(".bar")
           .data(data, function(d) { return d.name; });
 
-        bars.enter().append("rect");
-
-        bars.exit().remove();
-
-        bars.attr("class", "bar")
-        .attr("width", x.rangeBand());
-
-        // --- Animation ---
-        //
-        var transition = chart.transition().duration(500);
-
-        transition.selectAll(".bar")
+        bars.transition().duration(400)
         .attr("y", function(d) { return y(d.count); })
         .attr("height", function(d) { return height - y(d.count); })
         .delay(function(d, i) { return i * 200; })
@@ -146,6 +135,31 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
         })
         .attr("x", function(d) { return x0(d.name); });
 
+        bars.enter().append("rect")
+          .attr("y", height)
+          .attr("height", 0)
+          .attr("fill", function() {
+            switch ($scope.options.gender) {
+              case 'both':   return '#656D78';
+              case 'male':   return '#4A89DC';
+              case 'female': return '#D770AD';
+            }
+          })
+          .attr("x", function(d) { return x0(d.name); })
+          .transition().duration(1500)
+          .attr("y", function(d) { return y(d.count); })
+          .attr("height", function(d) { return height - y(d.count); });
+
+        bars.exit()
+        .transition().duration(500)
+        .attr("y", height)
+        .attr("height", 0)
+        .remove();
+
+        bars.attr("class", "bar")
+        .attr("width", x.rangeBand());
+
+        var transition = chart.transition().duration(500);
         transition.select("g.y.axis").call(yAxis);
         transition.select("g.x.axis").call(xAxis);
       }
