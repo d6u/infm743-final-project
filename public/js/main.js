@@ -10,8 +10,8 @@ var app = angular.module('horoscope-app', []);
 //
 app.run(function($rootScope) {
   $rootScope.options = {
-    gender: 'both',
-    sunburst: 'gender'
+    gender:   'both',
+    sunburst: 'genders'
   };
 });
 
@@ -123,17 +123,17 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
           .data(data, function(d) { return d.name; });
 
         bars.transition().duration(400)
-        .attr("y", function(d) { return y(d.count); })
-        .attr("height", function(d) { return height - y(d.count); })
-        .delay(function(d, i) { return i * 200; })
-        .attr("fill", function() {
-          switch ($scope.options.gender) {
-            case 'both':   return '#656D78';
-            case 'male':   return '#4A89DC';
-            case 'female': return '#D770AD';
-          }
-        })
-        .attr("x", function(d) { return x0(d.name); });
+          .attr("y", function(d) { return y(d.count); })
+          .attr("height", function(d) { return height - y(d.count); })
+          .delay(function(d, i) { return i * 200; })
+          .attr("fill", function() {
+            switch ($scope.options.gender) {
+              case 'both':   return '#656D78';
+              case 'male':   return '#4A89DC';
+              case 'female': return '#D770AD';
+            }
+          })
+          .attr("x", function(d) { return x0(d.name); });
 
         bars.enter().append("rect")
           .attr("y", height)
@@ -170,6 +170,129 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
     } // END link function
   } // END return {}
 }); // END directive horoscopeCountBarChart
+
+
+// Count for All Groups such as male and female
+//
+app.factory('countAllGroups', function(countHoroscopes) {
+
+  function sumCounts(array) {
+    var sum = 0;
+    for (var i = array.length - 1; i >= 0; i--) {
+      sum += array[i].count;
+    };
+    return sum;
+  }
+
+  return function(rawData) {
+    var data = countHoroscopes(rawData);
+    var results = {
+      genders:    {name: "by genders"   , children: []},
+      horoscopes: {name: "by horoscopes", children: []}
+    };
+    for (var gender in data) {
+      if (gender != 'both') {
+        results['genders']['children'].push({
+          name: gender, children: data[gender]
+        });
+      }
+    }
+    for (var i = data['both'].length - 1; i >= 0; i--) {
+      var name    = data['both'][i]['name'];
+      var male    = _.find(data['male']    , {name: name});
+      var female  = _.find(data['female']  , {name: name});
+      var unknown = _.find(data['unknown'] , {name: name});
+      var child = {
+        name: name,
+        children: [
+          {name: 'male'   , count: (male    ? male.count    : 0)},
+          {name: 'female' , count: (female  ? female.count  : 0)},
+          {name: 'unknown', count: (unknown ? unknown.count : 0)}
+        ]
+      };
+      results['horoscopes']['children'].push(child)
+    };
+    return results;
+  };
+}); // END factory summarizeData
+
+
+// Sunburst chart
+//
+app.directive('sunburstChart', function() {
+  return {
+    controller: function($scope, $element, countAllGroups) {
+
+      var width = 960, height = 500, radius = Math.min(width, height) / 2;
+
+      var color = d3.scale.category20();
+
+      var svg = d3.select($element[0])
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+      var partition = d3.layout.partition()
+        .sort(null)
+        .size([2 * Math.PI, radius * radius])
+        .value(function(d) { return d.count; });
+
+      var arc = d3.svg.arc()
+        .startAngle(function(d) { return d.x; })
+        .endAngle(function(d) { return d.x + d.dx; })
+        .innerRadius(function(d) { return Math.sqrt(d.y); })
+        .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
+
+
+      d3.json('/console.json', function(error, json) {
+        $scope.groupsCounts = countAllGroups(json['friends']['data']);
+        // console.log($scope.groupsCounts);
+        $scope.$watch('options.sunburst', determineChartBase);
+        $scope.$apply();
+      });
+
+
+      function determineChartBase(type) {
+        drawChart(_.cloneDeep($scope.groupsCounts[type]));
+      }
+
+      function drawChart(data) {
+        var path = svg.datum(data).selectAll("path")
+          .data(partition.nodes);
+
+        path.enter().append('path')
+          .attr("display", function(d) { return d.depth ? null : "none"; })
+           // hide inner ring
+          .attr("d", arc)
+          .style("stroke", "#fff")
+          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .style("fill-rule", "evenodd")
+          .each(stash);
+
+        path.exit().remove();
+      }
+
+      function stash(d) {
+        d.x0 = d.x;
+        d.dx0 = d.dx;
+      }
+
+      function arcTween(a) {
+        var i = d3.interpolate({x: a.x0, dx: a.dx0}, a);
+        return function(t) {
+          var b = i(t);
+          a.x0 = b.x;
+          a.dx0 = b.dx;
+          return arc(b);
+        };
+      }
+    }, // END controller function
+    link: function(scope, element, attrs) {
+
+    } // END link function
+  } // END return {}
+}); // END directive sunburstChart
 
 
 })(window, window.jQuery, window.angular, $access_token);
