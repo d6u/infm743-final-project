@@ -65,6 +65,7 @@ print <<HTML;
           <input type="radio" value="female" ng-model="options.gender"> Girls
         </label>
       </form>
+
       <svg horoscope-count-bar-chart class="chart"></svg>
     </div>
   </div>
