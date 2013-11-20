@@ -238,7 +238,7 @@ app.factory('countAllGroups', function(countHoroscopes) {
 //
 app.directive('sunburstChart', function() {
   return {
-    controller: function($scope, $element, countAllGroups) {
+    controller: function($scope, $element, countAllGroups, getZodiacOrder) {
 
       var width = 960, height = 500, radius = Math.min(width, height) / 2;
 
@@ -251,7 +251,9 @@ app.directive('sunburstChart', function() {
         .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
 
       var partition = d3.layout.partition()
-        .sort(null)
+        .sort(function(a, b) {
+          return getZodiacOrder(b.name) - getZodiacOrder(a.name);
+        })
         .size([2 * Math.PI, radius * radius])
         .value(function(d) { return d.count; });
 
@@ -341,7 +343,12 @@ app.factory('getZodiacOrder', function() {
     'virgo'    , 'libra'   , 'scorpio', 'sagittarius'
   ];
   return function(zodiacName) {
-    return zodiacs.indexOf(zodiacName.toLowerCase());
+    var index = zodiacs.indexOf(zodiacName.toLowerCase());
+    if (index >= 0) {
+      return index;
+    } else {
+      return 0;
+    }
   }
 });
 
