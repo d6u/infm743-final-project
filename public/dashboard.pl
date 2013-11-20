@@ -55,15 +55,26 @@ print <<HTML;
   <div class="row">
     <div class="col-sm-12">
       <form class="form-horizontal" role="form">
-        <label class="checkbox-inline">
-          <input type="radio" value="both" ng-model="options.gender"> Both
-        </label>
-        <label class="checkbox-inline">
-          <input type="radio" value="male" ng-model="options.gender"> Boys
-        </label>
-        <label class="checkbox-inline">
-          <input type="radio" value="female" ng-model="options.gender"> Girls
-        </label>
+        <div>
+          <label class="checkbox-inline">
+            <input type="radio" value="both" ng-model="options.gender"> Both
+          </label>
+          <label class="checkbox-inline">
+            <input type="radio" value="male" ng-model="options.gender"> Boys
+          </label>
+          <label class="checkbox-inline">
+            <input type="radio" value="female" ng-model="options.gender"> Girls
+          </label>
+        </div>
+
+        <div>
+          <label class="checkbox-inline">
+            <input type="radio" value="count" ng-model="options.barSort"> Sort by Count
+          </label>
+          <label class="checkbox-inline">
+            <input type="radio" value="zodiac" ng-model="options.barSort"> Sort by Zodiac Name
+          </label>
+        </div>
       </form>
 
       <svg horoscope-count-bar-chart class="chart"></svg>

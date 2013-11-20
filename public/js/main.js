@@ -12,6 +12,7 @@ app.run(function($rootScope, $q) {
 
   $rootScope.options = {
     gender:   'both',
+    barSort:  'count',
     sunburst: 'genders'
   };
 
@@ -65,7 +66,7 @@ app.factory('countHoroscopes', function() {
 // Draw bar chart
 app.directive('horoscopeCountBarChart', function($rootScope) {
   return {
-    controller: function($scope, $element, countHoroscopes) {
+    controller: function($scope, $element, countHoroscopes, getZodiacOrder) {
 
       var margin = {top: 20, right: 30, bottom: 30, left: 40},
         width = 960 - margin.left - margin.right,
@@ -104,6 +105,9 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
       $scope.gotData.then(function(json) {
         $scope.horoscopesCount = countHoroscopes(json['friends']['data']);
         $scope.$watch('options.gender', determineChartGender);
+        $scope.$watch('options.barSort', function() {
+          determineChartGender($scope.options.gender);
+        });
       });
 
 
@@ -118,7 +122,13 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
 
         var x0 = x.domain(
           data
-          .sort(function(a, b) { return b.count - a.count; })
+          .sort(function(a, b) {
+            if ($scope.options.barSort === 'count') {
+              return b.count - a.count;
+            } else {
+              return getZodiacOrder(b.name) - getZodiacOrder(a.name);
+            }
+          })
           .map(function(d) { return d.name; })
         ).copy();
 
@@ -320,6 +330,29 @@ app.directive('sunburstChart', function() {
     } // END link function
   } // END return {}
 }); // END directive sunburstChart
+
+
+// Return a number indicate the order of zodiac, with Capricorn as 0
+//
+app.factory('getZodiacOrder', function() {
+  var zodiacs = [
+    'capricorn', 'aquarius', 'pisces' , 'aries',
+    'taurus'   , 'gemini'  , 'cancer' , 'leo',
+    'virgo'    , 'libra'   , 'scorpio', 'sagittarius'
+  ];
+  return function(zodiacName) {
+    return zodiacs.indexOf(zodiacName.toLowerCase());
+  }
+});
+
+
+// Capitalize First Letter
+//
+app.factory('capitalizeFirst', function() {
+  return function(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  }
+});
 
 
 })(window, window.jQuery, window.angular, $access_token);
