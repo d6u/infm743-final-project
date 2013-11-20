@@ -1,13 +1,4 @@
-.bar {
-  fill: #656D78;
-  transition: all 250ms;
-}
-.bar.male {
-  fill: #4A89DC;
-}
-.bar.female {
-  fill: #D770AD;
-}
+.bar {}
 
 .axis text {
   font: 14px sans-serif;

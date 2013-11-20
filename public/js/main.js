@@ -10,7 +10,44 @@ var app = angular.module('horoscope-app', []);
 //
 app.run(function($rootScope) {
   $rootScope.options = {
-    gender: 'both'
+    gender:   'both',
+    sunburst: 'genders'
+  };
+});
+
+
+// Count horoscope frequencies for each gender group
+//
+app.factory('countHoroscopes', function() {
+  return function(rawData) {
+    var both = [], male = [], female = [], unknown = [];
+    var data, gender;
+    for (var i = rawData.length - 1; i >= 0; i--) {
+      data = _.find(both, {name: rawData[i].zodiac_name});
+      if (data) {
+        data.count++;
+      } else {
+        both.push({name: rawData[i].zodiac_name, count: 1});
+      }
+      switch (rawData[i].gender) {
+        case 'male':
+          gender = male;
+          break;
+        case 'female':
+          gender = female;
+          break;
+        default:
+          gender = unknown;
+          break;
+      }
+      data = _.find(gender, {name: rawData[i].zodiac_name});
+      if (data) {
+        data.count++;
+      } else {
+        gender.push({name: rawData[i].zodiac_name, count: 1});
+      }
+    };
+    return {both: both, male: male, female: female, unknown: unknown};
   };
 });
 
@@ -18,14 +55,14 @@ app.run(function($rootScope) {
 // Draw bar chart
 app.directive('horoscopeCountBarChart', function($rootScope) {
   return {
-    controller: function($scope, $element) {
+    controller: function($scope, $element, countHoroscopes) {
 
       var margin = {top: 20, right: 30, bottom: 30, left: 40},
         width = 960 - margin.left - margin.right,
         height = 500 - margin.top - margin.bottom;
 
       var x = d3.scale.ordinal()
-        .rangeRoundBands([0, width], .1);
+        .rangeRoundBands([0, width], .2);
 
       var y = d3.scale.linear()
         .range([height, 0]);
@@ -44,76 +81,37 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
         .scale(y)
         .orient("left");
 
-      var horoscopes       = [];
-      var horoscopesMale   = [];
-      var horoscopesFemale = [];
+      chart.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")");
 
-      // d3.json('/get_friends_data.json', function(error, json) {
-      d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
-        var friendsData = json['friends']['data'];
+      chart.append("g")
+        .attr("class", "y axis");
 
-        for (var i = friendsData.length - 1; i >= 0; i--) {
-          var friend = friendsData[i];
-          var name   = friend['zodiac_name'];
-          var gender = friend['gender'];
 
-          if (name != 'none') {
-            var theHoroscope       = _.find(horoscopes      , {name: name});
-            var theMaleHoroscope   = _.find(horoscopesMale  , {name: name});
-            var theFemaleHoroscope = _.find(horoscopesFemale, {name: name});
+      // Query Data
+      //
+      d3.json('/console.json', function(error, json) {
+      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
 
-            if (theHoroscope) {
-              theHoroscope['count']++;
-            } else {
-              horoscopes.push({name: name, count: 1});
-            }
-
-            if (gender == 'male') {
-              if (theMaleHoroscope) {
-                theMaleHoroscope['count']++;
-              } else {
-                horoscopesMale.push({name: name, count: 1});
-              }
-            }
-            else if (gender == 'female') {
-              if (theFemaleHoroscope) {
-                theFemaleHoroscope['count']++;
-              } else {
-                horoscopesFemale.push({name: name, count: 1});
-              }
-            }
-          }
-        };
-
-        chart.append("g")
-          .attr("class", "x axis")
-          .attr("transform", "translate(0," + height + ")");
-
-        chart.append("g")
-          .attr("class", "y axis");
-
-        drawChart();
+        $scope.horoscopesCount = countHoroscopes(json['friends']['data']);
+        $scope.$watch('options.gender', determineChartGender);
+        $scope.$apply();
       });
 
 
-      function drawChart() {
-        switch ($scope.options.gender) {
-          case 'both':
-            data = horoscopes;
-            break;
-          case 'male':
-            data = horoscopesMale;
-            break;
-          case 'female':
-            data = horoscopesFemale;
-            break;
-        }
+      function determineChartGender(gender) {
+        drawChart($scope.horoscopesCount[gender]);
+      }
+
+
+      function drawChart(data) {
 
         x.domain(data.map(function(d) { return d.name }));
 
         var x0 = x.domain(
           data
-          .sort(function(a, b) { return b.count - a.count;})
+          .sort(function(a, b) { return b.count - a.count; })
           .map(function(d) { return d.name; })
         ).copy();
 
@@ -121,49 +119,50 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
 
         chart.select("g.x.axis").call(xAxis);
 
-        var bars = chart.selectAll(".bar").data(data);
+        var bars = chart.selectAll(".bar")
+          .data(data, function(d) { return d.name; });
 
-        bars.enter().append("rect");
-        bars.exit().remove();
+        bars.transition().duration(400)
+          .attr("y", function(d) { return y(d.count); })
+          .attr("height", function(d) { return height - y(d.count); })
+          .delay(function(d, i) { return i * 200; })
+          .attr("fill", function() {
+            switch ($scope.options.gender) {
+              case 'both':   return '#656D78';
+              case 'male':   return '#4A89DC';
+              case 'female': return '#D770AD';
+            }
+          })
+          .attr("x", function(d) { return x0(d.name); });
+
+        bars.enter().append("rect")
+          .attr("y", height)
+          .attr("height", 0)
+          .attr("fill", function() {
+            switch ($scope.options.gender) {
+              case 'both':   return '#656D78';
+              case 'male':   return '#4A89DC';
+              case 'female': return '#D770AD';
+            }
+          })
+          .attr("x", function(d) { return x0(d.name); })
+          .transition().duration(1500)
+          .attr("y", function(d) { return y(d.count); })
+          .attr("height", function(d) { return height - y(d.count); });
+
+        bars.exit()
+        .transition().duration(500)
+        .attr("y", height)
+        .attr("height", 0)
+        .remove();
 
         bars.attr("class", "bar")
-        .classed("male", function() {
-          return $scope.options.gender === 'male';
-        })
-        .classed("female", function() {
-          return $scope.options.gender === 'female';
-        })
-        .attr("x", function(d) { return x0(d.name); })
         .attr("width", x.rangeBand());
 
-        // --- Animation ---
-        //
-        var transition = chart.transition();
-
-        transition.selectAll(".bar")
-        .attr("y", function(d) { return y(d.count); })
-        .attr("height", function(d) { return height - y(d.count); })
-        .attr("fill", function() {
-          switch ($scope.options.gender) {
-            case 'both':
-              return '#656D78';
-              break;
-            case 'male':
-              return '#4A89DC';
-              break;
-            case 'female':
-              return '#D770AD';
-              break;
-          }
-        });
-
+        var transition = chart.transition().duration(500);
         transition.select("g.y.axis").call(yAxis);
         transition.select("g.x.axis").call(xAxis);
       }
-
-      $scope.$watch('options.gender', function() {
-        drawChart();
-      });
 
     }, // END controller function
     link: function(scope, element, attrs) {
@@ -171,6 +170,152 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
     } // END link function
   } // END return {}
 }); // END directive horoscopeCountBarChart
+
+
+// Count for All Groups such as male and female
+//
+app.factory('countAllGroups', function(countHoroscopes) {
+
+  function sumCounts(array) {
+    var sum = 0;
+    for (var i = array.length - 1; i >= 0; i--) {
+      sum += array[i].count;
+    };
+    return sum;
+  }
+
+  return function(rawData) {
+    var data = countHoroscopes(rawData);
+    var results = {
+      genders:    {name: "by genders"   , children: []},
+      horoscopes: {name: "by horoscopes", children: []}
+    };
+    for (var gender in data) {
+      if (gender != 'both') {
+        results['genders']['children'].push({
+          name: gender, children: data[gender]
+        });
+      }
+    }
+    for (var i = data['both'].length - 1; i >= 0; i--) {
+      var name    = data['both'][i]['name'];
+      var male    = _.find(data['male']    , {name: name});
+      var female  = _.find(data['female']  , {name: name});
+      var unknown = _.find(data['unknown'] , {name: name});
+      var child = {
+        name: name,
+        children: [
+          {name: 'male'   , count: (male    ? male.count    : 0)},
+          {name: 'female' , count: (female  ? female.count  : 0)},
+          {name: 'unknown', count: (unknown ? unknown.count : 0)}
+        ]
+      };
+      results['horoscopes']['children'].push(child)
+    };
+    return results;
+  };
+}); // END factory summarizeData
+
+
+// Sunburst chart
+//
+app.directive('sunburstChart', function() {
+  return {
+    controller: function($scope, $element, countAllGroups) {
+
+      var width = 960, height = 500, radius = Math.min(width, height) / 2;
+
+      var color = d3.scale.category20();
+
+      var svg = d3.select($element[0])
+        .attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+      var partition = d3.layout.partition()
+        .sort(null)
+        .size([2 * Math.PI, radius * radius])
+        .value(function(d) { return d.count; });
+
+      var arc = d3.svg.arc()
+        .startAngle(function(d) { return d.x; })
+        .endAngle(function(d) { return d.x + d.dx; })
+        .innerRadius(function(d) { return Math.sqrt(d.y); })
+        .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
+
+
+      d3.json('/console.json', function(error, json) {
+      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+        $scope.groupsCounts = countAllGroups(json['friends']['data']);
+        // console.log($scope.groupsCounts);
+        $scope.$watch('options.sunburst', determineChartBase);
+        $scope.$apply();
+      });
+
+
+      function determineChartBase(type) {
+        drawChart($scope.groupsCounts[type]);
+      }
+
+      function drawChart(data) {
+        var path = svg.datum(data).selectAll("path")
+          .data(partition.nodes);
+
+        // updates
+        path.transition()
+          .duration(1500)
+          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .attrTween("d", function(a) {
+            var __test__ = this.__test__;
+            var i = d3.interpolate({x: __test__.x0, dx: __test__.dx0}, a);
+            return function(t) {
+              var b = i(t);
+              __test__.x0  = b.x;
+              __test__.dx0 = b.dx;
+              return arc(b);
+            };
+          });
+
+        // enter
+        path.enter().append('path')
+          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .transition()
+          .duration(1500)
+          .attrTween("d", function(a) {
+            var __test__ = this.__test__ = {};
+            var i = d3.interpolate({x: 0, dx: 0}, a);
+            return function(t) {
+              var b = i(t);
+              __test__.x0  = b.x;
+              __test__.dx0 = b.dx;
+              return arc(b);
+            };
+          });
+
+        // shared
+        path.attr("display", function(d) { return d.depth ? null : "none"; })
+          .style("stroke", "#fff")
+          .style("fill-rule", "evenodd");
+
+        // exit
+        path.exit()
+          .transition()
+          .duration(1500)
+          .attrTween("d", function(a) {
+            var i = d3.interpolate(a, {x: 0, dx: 0});
+            return function(t) {
+              return arc(i(t));
+            };
+          })
+          .remove();
+      }
+    }, // END controller function
+    link: function(scope, element, attrs) {
+
+    } // END link function
+  } // END return {}
+}); // END directive sunburstChart
 
 
 })(window, window.jQuery, window.angular, $access_token);

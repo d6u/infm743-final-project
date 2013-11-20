@@ -65,7 +65,21 @@ print <<HTML;
           <input type="radio" value="female" ng-model="options.gender"> Girls
         </label>
       </form>
+
       <svg horoscope-count-bar-chart class="chart"></svg>
+    </div>
+
+    <div class="col-sm-12">
+      <form class="form-horizontal" role="form">
+        <label class="checkbox-inline">
+          <input type="radio" value="genders" ng-model="options.sunburst"> Gender first
+        </label>
+        <label class="checkbox-inline">
+          <input type="radio" value="horoscopes" ng-model="options.sunburst"> Horoscope first
+        </label>
+      </form>
+
+      <svg sunburst-chart class="chart-sunburst"></svg>
     </div>
   </div>
 
