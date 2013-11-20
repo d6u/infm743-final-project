@@ -19,8 +19,8 @@ app.run(function($rootScope, $q) {
   var getData = $q.defer();
   $rootScope.gotData = getData.promise;
 
-  d3.json('/console.json', function(error, json) {
-  // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+  // d3.json('/console.json', function(error, json) {
+  d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
     getData.resolve(json);
   });
 
