@@ -8,11 +8,21 @@ var app = angular.module('horoscope-app', []);
 
 // Set Default Values
 //
-app.run(function($rootScope) {
+app.run(function($rootScope, $q) {
+
   $rootScope.options = {
     gender:   'both',
     sunburst: 'genders'
   };
+
+  var getData = $q.defer();
+  $rootScope.gotData = getData.promise;
+
+  d3.json('/console.json', function(error, json) {
+  // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+    getData.resolve(json);
+  });
+
 });
 
 
@@ -91,12 +101,9 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
 
       // Query Data
       //
-      d3.json('/console.json', function(error, json) {
-      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
-
+      $scope.gotData.then(function(json) {
         $scope.horoscopesCount = countHoroscopes(json['friends']['data']);
         $scope.$watch('options.gender', determineChartGender);
-        $scope.$apply();
       });
 
 
@@ -245,12 +252,9 @@ app.directive('sunburstChart', function() {
         .outerRadius(function(d) { return Math.sqrt(d.y + d.dy); });
 
 
-      d3.json('/console.json', function(error, json) {
-      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+      $scope.gotData.then(function(json) {
         $scope.groupsCounts = countAllGroups(json['friends']['data']);
-        // console.log($scope.groupsCounts);
         $scope.$watch('options.sunburst', determineChartBase);
-        $scope.$apply();
       });
 
 
