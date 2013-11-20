@@ -19,8 +19,8 @@ app.run(function($rootScope, $q) {
   var getData = $q.defer();
   $rootScope.gotData = getData.promise;
 
-  // d3.json('/console.json', function(error, json) {
-  d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
+  d3.json('/console.json', function(error, json) {
+  // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
     getData.resolve(json);
   });
 
@@ -126,7 +126,7 @@ app.directive('horoscopeCountBarChart', function($rootScope) {
             if ($scope.options.barSort === 'count') {
               return b.count - a.count;
             } else {
-              return getZodiacOrder(b.name) - getZodiacOrder(a.name);
+              return getZodiacOrder(a.name) - getZodiacOrder(b.name);
             }
           })
           .map(function(d) { return d.name; })
@@ -238,7 +238,7 @@ app.factory('countAllGroups', function(countHoroscopes) {
 //
 app.directive('sunburstChart', function() {
   return {
-    controller: function($scope, $element, countAllGroups, getZodiacOrder) {
+    controller: function($scope, $element, countAllGroups, getZodiacOrder, hexColor) {
 
       var width = 960, height = 500, radius = Math.min(width, height) / 2;
 
@@ -252,7 +252,7 @@ app.directive('sunburstChart', function() {
 
       var partition = d3.layout.partition()
         .sort(function(a, b) {
-          return getZodiacOrder(b.name) - getZodiacOrder(a.name);
+          return getZodiacOrder(a.name) - getZodiacOrder(b.name);
         })
         .size([2 * Math.PI, radius * radius])
         .value(function(d) { return d.count; });
@@ -281,7 +281,7 @@ app.directive('sunburstChart', function() {
         // updates
         path.transition()
           .duration(1500)
-          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .style("fill", function(d) { return hexColor(d.name); })
           .attrTween("d", function(a) {
             var __test__ = this.__test__;
             var i = d3.interpolate({x: __test__.x0, dx: __test__.dx0}, a);
@@ -295,7 +295,7 @@ app.directive('sunburstChart', function() {
 
         // enter
         path.enter().append('path')
-          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .style("fill", function(d) { return hexColor(d.name); })
           .transition()
           .duration(1500)
           .attrTween("d", function(a) {
@@ -312,10 +312,44 @@ app.directive('sunburstChart', function() {
         // shared
         path.attr("display", function(d) { return d.depth ? null : "none"; })
           .style("stroke", "#fff")
-          .style("fill-rule", "evenodd");
+          .style("fill-rule", "evenodd")
+          .each(function(d) {
+            if (d.count == null && d.depth) {
+              d.count = 0;
+              for (var i = d.children.length - 1; i >= 0; i--) {
+                d.count += d.children[i].count;
+              };
+            }
+          })
+          .each(function(d, i) {
+            var percentage;
+            if (d.parent) {
+              if (d.parent.depth) {
+                percentage = Math.round(d.count / d.parent.count * 100);
+              } else {
+                var total = 0;
+                for (var i = d.parent.children.length - 1; i >= 0; i--) {
+                  total += d.parent.children[i].count;
+                };
+                percentage = Math.round(d.count / total * 100);
+              }
+            }
+
+            var title = percentage ?
+                       (d.name + ': ' + d.count + ' (' + percentage + '%)') :
+                       (d.name + ': ' + d.count);
+
+            $(this).tooltip('destroy').tooltip({
+              animation: false,
+              title: title,
+              container: 'body',
+              placement: arc.centroid(d)[0] > 0 ? 'right' : 'left'
+            });
+          });
 
         // exit
         path.exit()
+          .each(function() { $(this).tooltip('destroy'); })
           .transition()
           .duration(1500)
           .attrTween("d", function(a) {
@@ -340,7 +374,8 @@ app.factory('getZodiacOrder', function() {
   var zodiacs = [
     'capricorn', 'aquarius', 'pisces' , 'aries',
     'taurus'   , 'gemini'  , 'cancer' , 'leo',
-    'virgo'    , 'libra'   , 'scorpio', 'sagittarius'
+    'virgo'    , 'libra'   , 'scorpio', 'sagittarius',
+    'none'
   ];
   return function(zodiacName) {
     var index = zodiacs.indexOf(zodiacName.toLowerCase());
@@ -359,6 +394,37 @@ app.factory('capitalizeFirst', function() {
   return function(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
   }
+});
+
+
+// Return HEX Color Code for Catagories
+//
+app.factory('hexColor', function() {
+  var colors = {
+    'capricorn'  : '#ED5565',
+    'aquarius'   : '#FC6E51',
+    'pisces'     : '#FFCE54',
+    'aries'      : '#A0D468',
+    'taurus'     : '#48CFAD',
+    'gemini'     : '#4FC1E9',
+    'cancer'     : '#5D9CEC',
+    'leo'        : '#AC92EC',
+    'virgo'      : '#EC87C0',
+    'libra'      : '#F5F7FA',
+    'scorpio'    : '#CCD1D9',
+    'sagittarius': '#656D78',
+    'male'       : '#4B89DC',
+    'female'     : '#D770AD',
+    'none'       : '#434A54',
+    'unknown'    : '#434A54'
+  };
+  return function(cat) {
+    if (colors[cat.toLowerCase()]) {
+      return colors[cat.toLowerCase()];
+    } else {
+      return '#000000';
+    }
+  };
 });
 
 
