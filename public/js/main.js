@@ -313,21 +313,31 @@ app.directive('sunburstChart', function() {
         path.attr("display", function(d) { return d.depth ? null : "none"; })
           .style("stroke", "#fff")
           .style("fill-rule", "evenodd")
-          .each(function(d, i) {
-            var count = 0;
-            if (d.count == null) {
+          .each(function(d) {
+            if (d.count == null && d.depth) {
+              d.count = 0;
               for (var i = d.children.length - 1; i >= 0; i--) {
-                count += d.children[i].count;
+                d.count += d.children[i].count;
               };
-            } else {
-              count = d.count
+            }
+          })
+          .each(function(d, i) {
+            var percentage;
+            if (d.parent) {
+              if (d.parent.depth) {
+                percentage = Math.round(d.count / d.parent.count * 100);
+              } else {
+                var total = 0;
+                for (var i = d.parent.children.length - 1; i >= 0; i--) {
+                  total += d.parent.children[i].count;
+                };
+                percentage = Math.round(d.count / total * 100);
+              }
             }
 
-            var percentage;
-
             var title = percentage ?
-                       (d.name + ': ' + count + ', ' + percentage) :
-                       (d.name + ': ' + count);
+                       (d.name + ': ' + d.count + ' (' + percentage + '%)') :
+                       (d.name + ': ' + d.count);
 
             $(this).tooltip('destroy').tooltip({
               animation: false,
