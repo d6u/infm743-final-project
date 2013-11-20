@@ -246,6 +246,7 @@ app.directive('sunburstChart', function() {
 
 
       d3.json('/console.json', function(error, json) {
+      // d3.json('/get_friends_data.pl?access_token=' + $access_token, function(error, json) {
         $scope.groupsCounts = countAllGroups(json['friends']['data']);
         // console.log($scope.groupsCounts);
         $scope.$watch('options.sunburst', determineChartBase);
@@ -254,38 +255,60 @@ app.directive('sunburstChart', function() {
 
 
       function determineChartBase(type) {
-        drawChart(_.cloneDeep($scope.groupsCounts[type]));
+        drawChart($scope.groupsCounts[type]);
       }
 
       function drawChart(data) {
         var path = svg.datum(data).selectAll("path")
           .data(partition.nodes);
 
-        path.enter().append('path')
-          .attr("display", function(d) { return d.depth ? null : "none"; })
-           // hide inner ring
-          .attr("d", arc)
-          .style("stroke", "#fff")
+        // updates
+        path.transition()
+          .duration(1500)
           .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
-          .style("fill-rule", "evenodd")
-          .each(stash);
+          .attrTween("d", function(a) {
+            var __test__ = this.__test__;
+            var i = d3.interpolate({x: __test__.x0, dx: __test__.dx0}, a);
+            return function(t) {
+              var b = i(t);
+              __test__.x0  = b.x;
+              __test__.dx0 = b.dx;
+              return arc(b);
+            };
+          });
 
-        path.exit().remove();
-      }
+        // enter
+        path.enter().append('path')
+          .style("fill", function(d) { return color((d.children ? d : d.parent).name); })
+          .transition()
+          .duration(1500)
+          .attrTween("d", function(a) {
+            var __test__ = this.__test__ = {};
+            var i = d3.interpolate({x: 0, dx: 0}, a);
+            return function(t) {
+              var b = i(t);
+              __test__.x0  = b.x;
+              __test__.dx0 = b.dx;
+              return arc(b);
+            };
+          });
 
-      function stash(d) {
-        d.x0 = d.x;
-        d.dx0 = d.dx;
-      }
+        // shared
+        path.attr("display", function(d) { return d.depth ? null : "none"; })
+          .style("stroke", "#fff")
+          .style("fill-rule", "evenodd");
 
-      function arcTween(a) {
-        var i = d3.interpolate({x: a.x0, dx: a.dx0}, a);
-        return function(t) {
-          var b = i(t);
-          a.x0 = b.x;
-          a.dx0 = b.dx;
-          return arc(b);
-        };
+        // exit
+        path.exit()
+          .transition()
+          .duration(1500)
+          .attrTween("d", function(a) {
+            var i = d3.interpolate(a, {x: 0, dx: 0});
+            return function(t) {
+              return arc(i(t));
+            };
+          })
+          .remove();
       }
     }, // END controller function
     link: function(scope, element, attrs) {
