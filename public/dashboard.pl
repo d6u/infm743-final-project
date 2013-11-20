@@ -9,6 +9,7 @@ use Header;
 use Footer;
 
 
+my $hostname     = url(-base => 1);
 my $access_token = param('access_token');
 
 
@@ -61,4 +62,4 @@ print <<HTML;
   </div>
 </div>
 HTML
-&Footer::print_foot();
+&Footer::print_foot($hostname, $access_token);

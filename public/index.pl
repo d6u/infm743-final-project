@@ -35,4 +35,4 @@ print <<HTML;
   </div>
 </div>
 HTML
-&Footer::print_foot();
+&Footer::print_foot($hostname);
