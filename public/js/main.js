@@ -312,10 +312,34 @@ app.directive('sunburstChart', function() {
         // shared
         path.attr("display", function(d) { return d.depth ? null : "none"; })
           .style("stroke", "#fff")
-          .style("fill-rule", "evenodd");
+          .style("fill-rule", "evenodd")
+          .each(function(d, i) {
+            var count = 0;
+            if (d.count == null) {
+              for (var i = d.children.length - 1; i >= 0; i--) {
+                count += d.children[i].count;
+              };
+            } else {
+              count = d.count
+            }
+
+            var percentage;
+
+            var title = percentage ?
+                       (d.name + ': ' + count + ', ' + percentage) :
+                       (d.name + ': ' + count);
+
+            $(this).tooltip('destroy').tooltip({
+              animation: false,
+              title: title,
+              container: 'body',
+              placement: arc.centroid(d)[0] > 0 ? 'right' : 'left'
+            });
+          });
 
         // exit
         path.exit()
+          .each(function() { $(this).tooltip('destroy'); })
           .transition()
           .duration(1500)
           .attrTween("d", function(a) {
